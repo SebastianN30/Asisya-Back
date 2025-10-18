@@ -1,28 +1,45 @@
-# Asisya API (Clean/Hexagonal, .NET 8)
+# Asisya API - Sistema de Gestión de Productos
 
-Cumple con la prueba técnica. Arquitectura limpia/hexagonal, EF Core (PostgreSQL), JWT, Docker, CI y **semilla automática** de categorías `SERVIDORES` y `CLOUD`.
+API RESTful desarrollada con .NET 8 implementando arquitectura limpia (Clean/Hexagonal), diseñada para gestionar productos y categorías con capacidades de carga masiva y operaciones CRUD completas.
+
+## Stack Tecnológico
+
+- **.NET 8** - Framework principal
+- **Entity Framework Core** - ORM con soporte PostgreSQL
+- **PostgreSQL** - Base de datos relacional
+- **JWT** - Autenticación basada en tokens
+- **Docker & Docker Compose** - Containerización
+- **xUnit, Moq, FluentAssertions** - Suite de testing
+- **Testcontainers** - Pruebas de integración
 
 ---
 
-## 📦 Requisitos
-- **.NET 8 SDK**
-- **Docker Desktop** (recomendado para DB)
-- (Opcional) **pgAdmin 4** o **DBeaver** para inspeccionar la base
+## Configuración Inicial
+
+### Prerrequisitos
+
+- .NET 8 SDK instalado
+- Docker Desktop (para gestión de contenedores)
+- Cliente de base de datos (pgAdmin/DBeaver) - opcional
 
 ---
 
-## 🚀 Clonar, construir y ejecutar **localmente** (API fuera de Docker)
+## Guías de Instalación
 
-> Ideal para depurar desde Visual Studio/VS Code.
+### Opción 1: Ejecución Local (Recomendada para Desarrollo)
 
-1) **Clonar el repo**
+Esta configuración permite depuración directa desde tu IDE preferido.
+
+**Paso 1: Obtener el código fuente**
 ```bash
-git clone <TU-REPO-GIT>.git asisya-api
+git clone <URL_DEL_REPOSITORIO>.git asisya-api
 cd asisya-api
 ```
 
-2) **Configurar conexión local (Development)**
-Crea `src/Asisya.Api/appsettings.Development.json` con tu conexión. Si usas la DB en Docker mapeada al puerto `55432`, usa:
+**Paso 2: Configurar appsettings para desarrollo**
+
+Crear archivo `src/Asisya.Api/appsettings.Development.json`:
+
 ```json
 {
   "ConnectionStrings": {
@@ -36,134 +53,190 @@ Crea `src/Asisya.Api/appsettings.Development.json` con tu conexión. Si usas la 
 }
 ```
 
-3) **Levantar la base en Docker (solo DB)**
-> Si ya tienes PostgreSQL local, puedes saltar este paso y ajustar la cadena.
+**Paso 3: Iniciar PostgreSQL en contenedor**
 ```bash
 docker compose up -d db
 ```
-> El `docker-compose.yml` expone la DB en el **host 55432** → contenedor 5432.
+*La base de datos quedará expuesta en el puerto 55432 del host*
 
-4) **Restaurar, compilar y ejecutar la API en Development**
+**Paso 4: Compilar y ejecutar la API**
 ```bash
 dotnet restore
 dotnet build
 dotnet run --project src/Asisya.Api
 ```
-- Swagger: http://localhost:5000/swagger
-- En el primer arranque se crea el esquema y se siembran categorías `SERVIDORES` y `CLOUD`.
 
-5) **Probar autenticación (JWT)**
+**Acceso a la aplicación:**
+- Interfaz Swagger: `http://localhost:5000/swagger`
+- El sistema inicializará automáticamente las categorías predeterminadas (SERVIDORES, CLOUD)
+
+---
+
+### Opción 2: Despliegue Completo con Docker
+
+Ejecuta toda la infraestructura containerizada (ideal para entornos similares a producción).
+
+```bash
+docker compose up --build
+```
+
+**Endpoints disponibles:**
+- API: `http://localhost:5000/swagger`
+- PostgreSQL: `127.0.0.1:55432`
+
+**Credenciales de conexión a BD:**
+- Host: `127.0.0.1`
+- Puerto: `55432`
+- Base de datos: `asisya_db`
+- Usuario: `postgres`
+- Contraseña: `123`
+
+---
+
+## Guía de Uso de la API
+
+### Autenticación
+
+Obtener token JWT:
 ```http
 POST /api/Auth/login
+Content-Type: application/json
+
 {
   "username": "admin",
   "password": "admin"
 }
 ```
-Copia el token y pulsa **Authorize** en Swagger (Bearer).
 
-6) **Probar endpoints clave**
-- `POST /api/Category` → crear categoría
-- `GET /api/Category` → listar
-- `POST /api/Products` → crear **un** producto
-- `POST /api/Products?count=100000` → **generar y guardar productos aleatorios** (carga masiva)
-- `GET /api/Products` → paginar/filtrar/buscar
-- `GET /api/Products/{id}` → detalle con foto de la categoría
-- `PUT /api/Products/{id}` / `DELETE /api/Products/{id}`
-
-> **Nota de carga masiva**: puedes ajustar el tamaño de lote con el parámetro opcional `batchSize`  
-> Ejemplo: `/api/Products?count=100000&batchSize=5000`
-
----
-
-## 🐳 Ejecutar **todo con Docker** (API + DB)
-
-1) **Levantar todo**
-```bash
-docker compose up --build
+Utilizar el token en Swagger mediante el botón **Authorize** o en headers:
 ```
-- API: http://localhost:5000/swagger
-- DB (host): **127.0.0.1:55432**
+Authorization: Bearer {tu_token}
+```
 
-2) **Conectar pgAdmin**
-- Host: `127.0.0.1`
-- Port: `55432`
-- Maintenance DB: `postgres`
-- User: `postgres`
-- Password: `123`
+### Endpoints Principales
 
-> Si no ves `asisya_db`, pulsa *Refresh* en **Databases** o vuelve a registrar la conexión.
+**Gestión de Categorías:**
+- `POST /api/Category` - Crear nueva categoría
+- `GET /api/Category` - Listar todas las categorías
+
+**Gestión de Productos:**
+- `POST /api/Products` - Crear producto individual
+- `POST /api/Products?count={n}` - Generación masiva de productos aleatorios
+- `GET /api/Products` - Listar con filtros, búsqueda y paginación
+- `GET /api/Products/{id}` - Obtener detalle (incluye imagen de categoría)
+- `PUT /api/Products/{id}` - Actualizar producto
+- `DELETE /api/Products/{id}` - Eliminar producto
+
+**Carga masiva optimizada:**
+```http
+POST /api/Products?count=100000&batchSize=5000
+```
+*El parámetro `batchSize` controla el tamaño de los lotes de inserción*
 
 ---
 
-## 🧪 Pruebas
+## Ejecución de Pruebas
 
 ```bash
 dotnet test
 ```
-- **Unitarias**: xUnit + Moq + FluentAssertions.  
-- **Integración**: Testcontainers (requiere Docker en ejecución).
+
+**Cobertura de testing:**
+- Pruebas unitarias para lógica de negocio
+- Pruebas de integración con PostgreSQL real (Testcontainers)
 
 ---
 
-## 🧰 Limpieza de Docker (reset total)
+## Gestión de Contenedores
 
-> **Windows PowerShell**
-
-- Bajar el stack de este proyecto y borrar volúmenes:
+### Detener y limpiar recursos del proyecto
 ```powershell
 docker compose down -v
 ```
 
-- Borrar **todas** las imágenes (builds):
+### Eliminación completa de imágenes Docker
 ```powershell
 docker images -q | ForEach-Object { docker rmi -f $_ }
 ```
 
-- Borrar contenedores e imágenes/volúmenes/redes no usados:
+### Limpieza profunda del sistema Docker
 ```powershell
 docker system prune -a --volumes -f
 ```
 
-> ⚠️ Esto deja Docker como recién instalado (se eliminan datos persistidos).
+⚠️ **Advertencia**: Esta operación elimina todos los contenedores, imágenes y volúmenes no utilizados
 
 ---
 
-## 🏗️ Decisiones arquitectónicas
+## Arquitectura del Sistema
 
-- **Clean/Hexagonal**:  
-  - **Domain**: entidades + puertos (interfaces de repos).
-  - **Application**: casos de uso, **DTOs** y lógica de orquestación (no exponemos entidades).
-  - **Infrastructure**: adaptadores (EF Core + Npgsql), repositorios y `AppDbContext`.
-  - **Api**: controllers y wiring DI.
-- **Persistencia**: PostgreSQL con EF Core. En arranque se usa `EnsureCreated()` para bootstrap simple en DEV/containers.  
-- **Semilla**: crea `SERVIDORES` y `CLOUD` si no existen.
-- **Seguridad**: JWT (clave ≥ 32 chars), endpoints críticos protegidos.
-- **Performance**:
-  - Inserción **por lotes** en carga masiva.
-  - Índices `products(name)` y `(categoryId, price)`.
-  - Query params para filtros (paginación, categoría, rango de precios, texto).
-- **Pruebas**: unitarias (servicios) + integración (repositorios con Postgres real vía Testcontainers).
+### Patrón Clean Architecture (Hexagonal)
+
+**Domain Layer (Núcleo)**
+- Entidades de dominio
+- Interfaces de puertos (contratos de repositorios)
+- Reglas de negocio independientes
+
+**Application Layer (Casos de Uso)**
+- Servicios de aplicación
+- DTOs para transferencia de datos
+- Orquestación de lógica de negocio
+
+**Infrastructure Layer (Adaptadores)**
+- Implementación de repositorios con EF Core
+- Contexto de base de datos (`AppDbContext`)
+- Integración con Npgsql
+
+**API Layer (Presentación)**
+- Controllers REST
+- Configuración de inyección de dependencias
+- Middleware y filtros
+
+### Estrategias de Rendimiento
+
+**Optimización de Base de Datos:**
+- Índices compuestos: `(categoryId, price)` para filtros frecuentes
+- Índice de búsqueda: `products(name)` para queries de texto
+- Paginación nativa en todas las consultas
+
+**Carga Masiva:**
+- Procesamiento por lotes (batch inserts)
+- Tamaño de lote configurable
+- Transacciones optimizadas
+
+**Inicialización:**
+- Método `EnsureCreated()` para bootstrap automático
+- Datos semilla (seed data) para categorías base
+
+### Seguridad
+
+- Autenticación JWT con claves de 256+ bits
+- Endpoints protegidos con autorización basada en tokens
+- Validación de entrada en DTOs
 
 ---
 
-## ☁️ Escalado horizontal en cloud
+## Estrategia de Escalabilidad Cloud
 
-**Objetivo**: aumentar réplicas y soportar picos (p. ej., 100k+ inserts) manteniendo latencia estable.
+### Arquitectura para Alta Disponibilidad
 
-1. **API stateless** con JWT → detrás de **Load Balancer** (ALB/NLB, App Gateway, GCP HTTPS LB).  
-2. **Contenedores** → **Kubernetes/ECS/App Service** con **autoscaling** (HPA o equivalente).  
-3. **DB**: **PgBouncer** (pooling), **read replicas** para lecturas, índices y escalado vertical inicial.  
-4. **Caching y colas**: Redis para listados/filtros, colas (SQS/RabbitMQ/Service Bus) para cargas masivas asíncronas (`202 Accepted`).  
-5. **Observabilidad**: logs estructurados (Serilog), tracing (OpenTelemetry), métricas (P95, RPS), health/ready checks.  
-6. **CI/CD**: GitHub Actions → build/test/push imagen → despliegue blue/green o canary.  
-7. **Config/secretos**: variables de entorno + Secret Manager (JWT/DB).
+**1. Capa de Aplicación**
+- API stateless compatible con escalado horizontal
+- Load Balancer (ALB, Azure App Gateway, GCP HTTPS LB)
+- Múltiples instancias detrás del balanceador
 
-Ejemplo HPA (K8s):
+**2. Orquestación de Contenedores**
 ```yaml
+# Ejemplo de HorizontalPodAutoscaler para Kubernetes
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
+metadata:
+  name: asisya-api-hpa
 spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: asisya-api
   minReplicas: 2
   maxReplicas: 20
   metrics:
@@ -175,23 +248,72 @@ spec:
           averageUtilization: 60
 ```
 
+**3. Capa de Datos**
+- **Connection Pooling**: PgBouncer para gestión eficiente de conexiones
+- **Read Replicas**: Separación de lecturas/escrituras
+- **Escalado vertical**: Aumentar recursos de instancia principal
+- **Índices optimizados**: Revisión continua de query performance
+
+**4. Caché y Procesamiento Asíncrono**
+- **Redis/Memcached**: Cache de listados y filtros frecuentes
+- **Message Queues**: SQS/RabbitMQ/Azure Service Bus para operaciones masivas
+- Patrón `202 Accepted` para operaciones de larga duración
+
+**5. Observabilidad**
+- Logs estructurados con Serilog
+- Distributed tracing (OpenTelemetry)
+- Métricas clave: P95 latency, requests/segundo, tasa de error
+- Health checks (`/health`, `/ready`)
+
+**6. CI/CD y Despliegue**
+- Pipeline automatizado (GitHub Actions, GitLab CI)
+- Build → Test → Push a registry
+- Estrategias: Blue-Green o Canary deployments
+- Rollback automático ante fallos
+
+**7. Gestión de Configuración**
+- Variables de entorno para configuración por ambiente
+- Secrets Manager para credenciales (AWS Secrets Manager, Azure Key Vault)
+- Separación estricta de configuración y código
+
 ---
 
-## 🔐 Variables de entorno más comunes
+## Variables de Entorno
 
-- **ConnectionStrings:DefaultConnection**  
-  - Docker (API dentro de Docker): `Host=db;Port=5432;Database=asisya_db;Username=postgres;Password=123`  
-  - Local (API fuera de Docker, DB en Docker 55432): `Host=localhost;Port=55432;Database=asisya_db;Username=postgres;Password=123`
+### Conexión a Base de Datos
 
-- **JWT**  
-  - `Jwt:Key` (≥ 32 chars), `Jwt:Issuer`, `Jwt:Audience`
+**API dentro de Docker:**
+```
+ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=asisya_db;Username=postgres;Password=123
+```
+
+**API local con DB en Docker:**
+```
+ConnectionStrings__DefaultConnection=Host=localhost;Port=55432;Database=asisya_db;Username=postgres;Password=123
+```
+
+### Configuración JWT
+
+```
+Jwt__Key=<clave_minimo_32_caracteres>
+Jwt__Issuer=Asisya
+Jwt__Audience=AsisyaClients
+```
 
 ---
 
-## ✅ Checklist rápido
-- `docker compose up --build` levanta API+DB.  
-- Swagger en `http://localhost:5000/swagger`.  
-- `POST /api/Auth/login` (admin/admin) → token.  
-- `POST /api/Products?count=N` → carga masiva (lotes).  
-- `GET /api/Products` → filtros/paginación.  
-- pgAdmin a `127.0.0.1:55432` para ver `asisya_db`.
+## Checklist de Verificación
+
+- [ ] Levantar stack completo: `docker compose up --build`
+- [ ] Verificar Swagger en `http://localhost:5000/swagger`
+- [ ] Autenticarse: `POST /api/Auth/login` con credenciales admin/admin
+- [ ] Probar carga masiva: `POST /api/Products?count=10000`
+- [ ] Validar filtros: `GET /api/Products?categoryId=1&minPrice=100`
+- [ ] Conectar pgAdmin a `127.0.0.1:55432` para inspección de datos
+- [ ] Ejecutar suite de pruebas: `dotnet test`
+
+---
+
+## Soporte y Contribuciones
+
+Para reportar problemas o sugerir mejoras, por favor abre un issue en el repositorio del proyecto.
