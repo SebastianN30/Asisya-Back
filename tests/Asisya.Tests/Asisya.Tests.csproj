@@ -1,0 +1,42 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <Nullable>enable</Nullable>
+    <!-- Fuerza a copiar TODAS las dependencias al bin de testhost -->
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Asisya.Application\Asisya.Application.csproj" />
+    <ProjectReference Include="..\..\src\Asisya.Domain\Asisya.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Asisya.Infrastructure\Asisya.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Test SDK + xUnit -->
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+
+    <!-- Asserts & Mocks -->
+    <PackageReference Include="FluentAssertions" Version="6.12.0" />
+    <PackageReference Include="Moq" Version="4.20.72" />
+    <PackageReference Include="Castle.Core" Version="5.1.1" />
+
+    <!-- Faltante que exige tu deps.json -->
+    <PackageReference Include="BouncyCastle.Cryptography" Version="2.4.0" />
+
+    <!-- EF Core provider -->
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.8" />
+
+    <!-- Testcontainers (paquetes correctos) -->
+    <PackageReference Include="Testcontainers" Version="3.8.0" />
+    <PackageReference Include="Testcontainers.PostgreSql" Version="3.8.0" />
+  </ItemGroup>
+
+</Project>
